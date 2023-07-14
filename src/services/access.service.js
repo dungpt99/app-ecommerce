@@ -15,27 +15,36 @@ const {
 const { findByEmail } = require("./shop.services");
 
 class AccessService {
-  static handlerRefreshToken = async (refreshToken) => {
-    const foundToken = await KeyTokenService.findByRefreshTokenUsed(
-      refreshToken
-    );
+  static handlerRefreshToken = async ({ refreshToken, user, keystore }) => {
+    const { userId, email } = user;
 
-    if (foundToken) {
-      const { userId, email } = verifyJWT(refreshToken, foundToken.privateKey);
-      console.log("1", { userId, email });
-
+    if (keystore.refreshTokensUsed.includes(refreshToken)) {
       await KeyTokenService.deleteKeyById(userId);
       throw new ForbiddenRequestError("Something went wrong! Pls login");
     }
 
-    const holderToken = await KeyTokenService.findByRefreshToken(refreshToken);
-    if (!holderToken) throw new AuthFailureError("Shop not register");
+    if (keystore.refreshToken !== refreshToken)
+      throw new AuthFailureError("Shop not register");
+    // const foundToken = await KeyTokenService.findByRefreshTokenUsed(
+    //   refreshToken
+    // );
 
-    const { userId, email } = await verifyJWT(
-      refreshToken,
-      holderToken.privateKey
-    );
-    console.log("2", { userId, email });
+    // if (foundToken) {
+    //   const { userId, email } = verifyJWT(refreshToken, foundToken.privateKey);
+    //   console.log("1", { userId, email });
+
+    //   await KeyTokenService.deleteKeyById(userId);
+    //   throw new ForbiddenRequestError("Something went wrong! Pls login");
+    // }
+
+    // const holderToken = await KeyTokenService.findByRefreshToken(refreshToken);
+    // if (!holderToken) throw new AuthFailureError("Shop not register");
+
+    // const { userId, email } = await verifyJWT(
+    //   refreshToken,
+    //   holderToken.privateKey
+    // );
+    // console.log("2", { userId, email });
     const foundShop = await findByEmail({ email });
     if (!foundShop) throw new AuthFailureError("Shop not register");
 
@@ -55,7 +64,7 @@ class AccessService {
     });
 
     return {
-      user: { userId, email },
+      user,
       tokens,
     };
   };
