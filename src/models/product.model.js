@@ -85,9 +85,30 @@ const electronicSchema = new Schema(
   }
 );
 
+//Define the product type  = furniture
+const furnitureSchema = new Schema(
+  {
+    manufacturer: {
+      type: String,
+      require: true,
+    },
+    model: String,
+    color: String,
+    productShop: {
+      type: Types.ObjectId,
+      ref: "Shop",
+    },
+  },
+  {
+    collection: "Furniture",
+    timestamps: true,
+  }
+);
+
 //Export the model
 module.exports = {
   product: model(DOCUMENT_NAME, productSchema),
   electronic: model("Electronics", electronicSchema),
   clothing: model("Clothing", clothingSchema),
+  furniture: model("Furniture", furnitureSchema),
 };
