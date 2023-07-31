@@ -17,6 +17,12 @@ class ProductController {
     }).send(res);
   };
 
+  /**
+   * @description Get all draft for shop
+   * @param {Number } limit
+   * @param {Number } skip
+   * @return { JSON }
+   */
   getAllDraftsForShop = async (req, res, next) => {
     new SuccessResponse({
       message: "Get list draft product success",
