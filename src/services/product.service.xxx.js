@@ -7,7 +7,12 @@ const {
   electronic,
   furniture,
 } = require("../models/product.model");
-const { findAllDraftsForShop } = require("../models/repositories/product.repo");
+const {
+  findAllProductForShop,
+  publishProductByShop,
+  unpublishProductByShop,
+  searchProduct,
+} = require("../models/repositories/product.repo");
 
 class ProductFactoryService {
   static productRegistry = {};
@@ -22,9 +27,26 @@ class ProductFactoryService {
     return new productClass(payload).createProduct();
   }
 
+  static async publishProductByShop({ productShop, productId }) {
+    return await publishProductByShop({ productShop, productId });
+  }
+
+  static async unpublishProductByShop({ productShop, productId }) {
+    return await unpublishProductByShop({ productShop, productId });
+  }
+
   static async findAllDraftForShop({ productShop, limit = 50, skip = 0 }) {
     const query = { productShop, isDraft: true };
-    return await findAllDraftsForShop(query, limit, skip);
+    return await findAllProductForShop({ query, limit, skip });
+  }
+
+  static async findAllPublishForShop({ productShop, limit = 50, skip = 0 }) {
+    const query = { productShop, isPublished: true };
+    return await findAllProductForShop({ query, limit, skip });
+  }
+
+  static async searchProduct({ keySearch }) {
+    return await searchProduct({ keySearch });
   }
 }
 

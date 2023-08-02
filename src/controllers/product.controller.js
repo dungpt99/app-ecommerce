@@ -17,6 +17,26 @@ class ProductController {
     }).send(res);
   };
 
+  publishProductByShop = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Update product success",
+      metadata: await ProductFactoryService.publishProductByShop({
+        productShop: req.user.userId,
+        productId: req.params.id,
+      }),
+    }).send(res);
+  };
+
+  unpublishProductByShop = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Update product success",
+      metadata: await ProductFactoryService.unpublishProductByShop({
+        productShop: req.user.userId,
+        productId: req.params.id,
+      }),
+    }).send(res);
+  };
+
   /**
    * @description Get all draft for shop
    * @param {Number } limit
@@ -29,6 +49,22 @@ class ProductController {
       metadata: await ProductFactoryService.findAllDraftForShop({
         productShop: req.user.userId,
       }),
+    }).send(res);
+  };
+
+  getAllPublishForShop = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Get list publish product success",
+      metadata: await ProductFactoryService.findAllPublishForShop({
+        productShop: req.user.userId,
+      }),
+    }).send(res);
+  };
+
+  getListSearchProduct = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Get list product success",
+      metadata: await ProductFactoryService.searchProduct(req.params),
     }).send(res);
   };
 }
