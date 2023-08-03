@@ -17,6 +17,17 @@ class ProductController {
     }).send(res);
   };
 
+  updateProduct = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Update product success",
+      metadata: await ProductFactoryService.updateProduct(
+        req.body.productType,
+        req.params.productId,
+        { ...req.body, productShop: req.user.userId }
+      ),
+    }).send(res);
+  };
+
   publishProductByShop = async (req, res, next) => {
     new SuccessResponse({
       message: "Update product success",
@@ -39,8 +50,8 @@ class ProductController {
 
   /**
    * @description Get all draft for shop
-   * @param {Number } limit
-   * @param {Number } skip
+   * @param { Number } limit
+   * @param { Number } skip
    * @return { JSON }
    */
   getAllDraftsForShop = async (req, res, next) => {
@@ -65,6 +76,22 @@ class ProductController {
     new SuccessResponse({
       message: "Get list product success",
       metadata: await ProductFactoryService.searchProduct(req.params),
+    }).send(res);
+  };
+
+  getAllProducts = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Get list product success",
+      metadata: await ProductFactoryService.findAllProducts(req.query),
+    }).send(res);
+  };
+
+  getProduct = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Get list product success",
+      metadata: await ProductFactoryService.findProduct({
+        productId: req.params.id,
+      }),
     }).send(res);
   };
 }
