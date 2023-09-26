@@ -19,6 +19,11 @@ app.use(
 // app.use(morgan("short"));
 // app.use(morgan("tiny"));
 
+// Test pubsub redis
+// require("../src/tests/inventory.test");
+// const productTest = require("../src/tests/product.test");
+// productTest.purchaseProduct("123", 10);
+
 //init db
 require("./dbs/init.mongodb");
 

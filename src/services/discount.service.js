@@ -4,6 +4,7 @@ const { BadRequestError, NotfoundError } = require("../core/error.response");
 const discountModel = require("../models/discount.model");
 const {
   findAllDiscountCodesUnSelect,
+  checkDiscountExists,
 } = require("../models/repositories/discount.repo");
 const { findAllProducts } = require("../models/repositories/product.repo");
 const { convertToObjectIdMongodb } = require("../utils");
@@ -28,12 +29,11 @@ class DiscountService {
       usersUsed,
       maxUsePerUser,
     } = payload;
-    if (new Date() < new Date(startDate) || new Date() > new Date(endDate)) {
+    if (
+      new Date(endDate) < new Date(startDate) ||
+      new Date() > new Date(endDate)
+    ) {
       throw new BadRequestError("Discount code has expired");
-    }
-
-    if (new Date(startDate) > new Date(endDate)) {
-      throw new BadRequestError("Start date must be before end date");
     }
 
     const foundDiscount = await discountModel
@@ -47,7 +47,7 @@ class DiscountService {
       throw new BadRequestError("Discount exist!");
     }
 
-    const newDiscount = await discount.create({
+    const newDiscount = await discountModel.create({
       discountName: name,
       discountDescription: description,
       discountType: type,
@@ -84,7 +84,7 @@ class DiscountService {
         discountShopId: convertToObjectIdMongodb(shopId),
       })
       .lean();
-    if (!foundDiscount || !foundDiscount.isActive) {
+    if (!foundDiscount || !foundDiscount.discountIsActive) {
       throw new NotfoundError("Discount not exist");
     }
 
@@ -135,4 +135,106 @@ class DiscountService {
 
     return discounts;
   }
+
+  static async getDiscountAmount({ codeId, userId, shopId, products }) {
+    const foundDiscount = await checkDiscountExists({
+      model: discountModel,
+      filter: {
+        discountCode: codeId,
+        discountShopId: convertToObjectIdMongodb(shopId),
+      },
+    });
+
+    if (!foundDiscount) throw new NotfoundError("Discount not found");
+
+    const {
+      discountIsActive,
+      discountMaxUses,
+      discountStart,
+      discountEnd,
+      discountMinOrderValue,
+      discountMaxUserCanUse,
+      discountUsersUsed,
+      discountValue,
+      discountType,
+    } = foundDiscount;
+
+    if (!discountIsActive) throw new NotfoundError("Discount expired");
+    if (!discountMaxUses) throw new NotfoundError("Discount is out");
+
+    if (
+      new Date() < new Date(discountStart) ||
+      new Date() > new Date(discountEnd)
+    ) {
+      throw new NotfoundError("Discount expired");
+    }
+
+    // check gia tri toi thieu
+    let totalOrder = 0;
+    if (discountMinOrderValue > 0) {
+      totalOrder = products.reduce((acc, product) => {
+        return acc + product.quantity * product.price;
+      }, 0);
+
+      if (totalOrder < discountMinOrderValue)
+        throw new NotfoundError(
+          `Discount require a minium order value of ${discountMinOrderValue}`
+        );
+    }
+
+    if (discountMaxUserCanUse > 0) {
+      const userDiscount = discountUsersUsed.find(
+        (user) => user.userId === userId
+      );
+
+      if (userDiscount) {
+      }
+    }
+
+    // check discount nay la fix amount
+    const amount =
+      discountType === "fixed_amount"
+        ? discountValue
+        : totalOrder * (discountValue / 100);
+
+    return {
+      totalOrder,
+      discount: amount,
+      totalPrice: totalOrder - amount,
+    };
+  }
+
+  static async deleteDiscountCode({ shopId, codeId }) {
+    const deleted = await discountModel.findOneAndDelete({
+      discountCode: codeId,
+      discountShopId: convertToObjectIdMongodb(shopId),
+    });
+    return deleted;
+  }
+
+  static async cancelDiscountCode({ codeId, shopId, userId }) {
+    const foundDiscount = await checkDiscountExists({
+      model: discountModel,
+      filter: {
+        discountCode: codeId,
+        discountShopId: convertToObjectIdMongodb(shopId),
+      },
+    });
+
+    if (!foundDiscount) throw new NotfoundError("Discount not found");
+
+    const result = await discountModel.findByIdAndUpdate(foundDiscount._id, {
+      $pull: {
+        discountUsersUsed: userId,
+      },
+      $inc: {
+        discountMaxUses: 1,
+        discountUsed: -1,
+      },
+    });
+
+    return result;
+  }
 }
+
+module.exports = DiscountService;
